@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI4I Predictive Maintenance · Local Test Lab</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:        #0b0e14;
+  --surface:   #141822;
+  --surface2:  #1b2030;
+  --surface3:  #232a3d;
+  --border:    #2a3148;
+  --text:      #e9edf5;
+  --muted:     #7d879c;
+  --accent:    #4fc3f7;
+  --accent2:   #7e57ff;
+  --green:     #4ade80;
+  --yellow:    #fbbf24;
+  --orange:    #fb923c;
+  --red:       #f87171;
+  --radius:    12px;
+}
+body{background:
+  radial-gradient(ellipse 1200px 600px at 20% -10%, rgba(79,195,247,.08), transparent),
+  radial-gradient(ellipse 1000px 500px at 100% 0%, rgba(126,87,255,.08), transparent),
+  var(--bg);
+  color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;
+  font-size:14px;line-height:1.6;min-height:100vh}
+h1{font-size:1.4rem;font-weight:800}
+h2{font-size:1.05rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+h3{font-size:.92rem;font-weight:700;color:var(--text)}
+::-webkit-scrollbar{height:8px;width:8px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+/* ── Header ──────────────────────────────────────────── */
+header{background:rgba(20,24,34,.85);backdrop-filter:blur(10px);
+       border-bottom:1px solid var(--border);
+       padding:16px 28px;display:flex;align-items:center;gap:14px;
+       position:sticky;top:0;z-index:50}
+.logo-badge{width:42px;height:42px;border-radius:12px;
+            background:linear-gradient(135deg,var(--accent),var(--accent2));
+            display:flex;align-items:center;justify-content:center;font-size:1.3rem;
+            box-shadow:0 4px 18px rgba(79,195,247,.35)}
+.subtitle{font-size:.8rem;color:var(--muted);margin-top:2px}
+.header-badges{margin-left:auto;display:flex;gap:8px}
+.hbadge{font-size:.72rem;padding:5px 11px;border-radius:20px;
+        background:var(--surface2);border:1px solid var(--border);color:var(--muted)}
+
+.container{max-width:1240px;margin:0 auto;padding:26px 22px 60px}
+
+/* ── Tabs ────────────────────────────────────────────── */
+.tabs{display:flex;gap:6px;margin-bottom:26px;background:var(--surface);
+      padding:6px;border-radius:14px;border:1px solid var(--border);width:fit-content}
+.tab{padding:10px 20px;border-radius:10px;cursor:pointer;
+     color:var(--muted);font-weight:600;font-size:.86rem;transition:.18s;
+     display:flex;align-items:center;gap:7px}
+.tab:hover{color:var(--text)}
+.tab.active{background:linear-gradient(135deg,var(--accent),#38a8d8);color:#06121a}
+.tab-panel{display:none;animation:fadeIn .3s ease}
+.tab-panel.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ── Cards ───────────────────────────────────────────── */
+.card{background:var(--surface);border:1px solid var(--border);
+      border-radius:var(--radius);padding:22px;margin-bottom:20px;
+      box-shadow:0 2px 20px rgba(0,0,0,.2)}
+.card-sub{color:var(--muted);font-size:.82rem;margin-bottom:18px}
+
+/* ── Grid ────────────────────────────────────────────── */
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:800px){.grid-3,.grid-2,.grid-4{grid-template-columns:1fr 1fr}}
+@media(max-width:520px){.grid-3,.grid-2,.grid-4{grid-template-columns:1fr}}
+
+/* ── Sliders / inputs ────────────────────────────────── */
+.form-group{display:flex;flex-direction:column;gap:6px;background:var(--surface2);
+            border-radius:10px;padding:14px;border:1px solid transparent;transition:.15s}
+.form-group:focus-within{border-color:var(--accent)}
+label{font-size:.8rem;color:var(--text);font-weight:600;display:flex;justify-content:space-between}
+label .unit{color:var(--muted);font-weight:400}
+input[type=range]{width:100%;accent-color:var(--accent);height:5px}
+input[type=number]{background:var(--surface3);border:1px solid var(--border);
+  color:var(--text);border-radius:6px;padding:7px 10px;font-size:.88rem;width:100%;outline:none}
+input[type=number]:focus{border-color:var(--accent)}
+select{background:var(--surface3);border:1px solid var(--border);color:var(--text);
+       border-radius:6px;padding:8px 10px;font-size:.88rem;width:100%;outline:none}
+.slider-row{display:flex;align-items:center;gap:10px}
+.slider-val{min-width:64px;text-align:right;font-weight:700;color:var(--accent);font-size:.9rem}
+.hint{font-size:.72rem;color:var(--muted)}
+
+/* ── Buttons ─────────────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;
+     border-radius:9px;font-size:.87rem;font-weight:700;cursor:pointer;
+     border:none;transition:.15s}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#38a8d8);color:#06121a}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(79,195,247,.3)}
+.btn-outline{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
+.btn-outline:hover{border-color:var(--accent);color:var(--accent)}
+.btn-green{background:linear-gradient(135deg,var(--green),#22b465);color:#052e12}
+.btn-green:hover{transform:translateY(-1px)}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none!important}
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+
+/* ── Badges ──────────────────────────────────────────── */
+.badge{display:inline-block;padding:4px 12px;border-radius:20px;
+       font-size:.76rem;font-weight:700;letter-spacing:.02em}
+.badge-Critical{background:rgba(248,113,113,.15);color:var(--red);border:1px solid var(--red)}
+.badge-High    {background:rgba(251,146,60,.15);color:var(--orange);border:1px solid var(--orange)}
+.badge-Medium  {background:rgba(251,191,36,.15);color:var(--yellow);border:1px solid var(--yellow)}
+.badge-Low     {background:rgba(74,222,128,.15);color:var(--green);border:1px solid var(--green)}
+.badge-Healthy {background:rgba(74,222,128,.15);color:var(--green);border:1px solid var(--green)}
+.badge-Monitor {background:rgba(251,191,36,.15);color:var(--yellow);border:1px solid var(--yellow)}
+.badge-AtRisk  {background:rgba(251,146,60,.15);color:var(--orange);border:1px solid var(--orange)}
+
+/* ── Result hero ─────────────────────────────────────── */
+#single-result{display:none}
+.result-hero{text-align:center;padding:24px 0 16px}
+.prob-ring{position:relative;display:inline-flex;align-items:center;justify-content:center;
+           width:160px;height:160px;margin-bottom:16px}
+.prob-ring svg{transform:rotate(-90deg)}
+.prob-ring-text{position:absolute;display:flex;flex-direction:column;align-items:center}
+.prob-num{font-size:2.1rem;font-weight:800;line-height:1}
+.prob-lbl{font-size:.72rem;color:var(--muted);margin-top:4px}
+
+.metric-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0}
+.metric-box{background:var(--surface2);border-radius:10px;padding:16px 12px;text-align:center;
+            border:1px solid var(--border)}
+.metric-val{font-size:1.05rem;font-weight:800}
+.metric-lbl{font-size:.72rem;color:var(--muted);margin-top:5px}
+
+/* ── Gauge ───────────────────────────────────────────── */
+.gauge-wrap{margin:14px 0 6px}
+.gauge-track{height:12px;background:var(--surface3);border-radius:8px;overflow:hidden;
+             box-shadow:inset 0 1px 3px rgba(0,0,0,.4)}
+.gauge-fill{height:100%;border-radius:8px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.gauge-labels{display:flex;justify-content:space-between;
+              font-size:.68rem;color:var(--muted);margin-top:5px}
+
+/* ── Sensor bars ─────────────────────────────────────── */
+.sensor-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.sensor-name{width:190px;font-size:.82rem;color:var(--text);flex-shrink:0;font-weight:600}
+.sensor-track{flex:1;height:8px;background:var(--surface3);border-radius:5px;overflow:hidden}
+.sensor-fill{height:100%;border-radius:5px;transition:width .5s}
+.sensor-val{width:90px;text-align:right;font-size:.82rem;font-weight:700}
+.sensor-status{width:60px;text-align:center;font-size:.75rem;font-weight:700}
+
+/* ── Actions / modes list ────────────────────────────── */
+.action-item{display:flex;gap:10px;padding:11px 14px;background:var(--surface2);
+             border-radius:9px;margin-bottom:8px;font-size:.85rem;
+             border-left:3px solid var(--yellow)}
+.action-item.ok{border-left-color:var(--green)}
+.mode-chip{display:inline-block;background:var(--surface3);border:1px solid var(--border);
+           padding:6px 13px;border-radius:20px;font-size:.8rem;margin:4px 6px 4px 0;
+           color:var(--accent);font-weight:600}
+
+/* ── Batch ───────────────────────────────────────────── */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.stat-box{background:var(--surface2);border-radius:12px;padding:18px;text-align:center;
+          border:1px solid var(--border)}
+.stat-num{font-size:1.7rem;font-weight:800}
+.stat-lbl{font-size:.76rem;color:var(--muted);margin-top:5px}
+
+.table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);max-height:520px}
+table{width:100%;border-collapse:collapse}
+th{background:var(--surface2);padding:11px 14px;text-align:left;
+   font-size:.78rem;color:var(--muted);font-weight:700;
+   border-bottom:1px solid var(--border);white-space:nowrap;position:sticky;top:0}
+td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);
+   font-size:.82rem;white-space:nowrap}
+tr:hover td{background:rgba(255,255,255,.025)}
+
+.upload-zone{border:2px dashed var(--border);border-radius:var(--radius);
+             padding:36px;text-align:center;cursor:pointer;transition:.18s;background:var(--surface2)}
+.upload-zone:hover,.upload-zone.dragging{border-color:var(--accent);background:rgba(79,195,247,.05)}
+
+/* ── Toast ───────────────────────────────────────────── */
+#toast{position:fixed;bottom:24px;right:24px;background:var(--surface2);
+       border:1px solid var(--border);color:var(--text);padding:13px 22px;
+       border-radius:10px;font-size:.85rem;opacity:0;transition:.25s;
+       pointer-events:none;z-index:999;max-width:340px;
+       box-shadow:0 8px 30px rgba(0,0,0,.4)}
+#toast.show{opacity:1;transform:translateY(-4px)}
+
+.spinner{display:none;width:18px;height:18px;border:2px solid rgba(0,0,0,.2);
+         border-top-color:#06121a;border-radius:50%;
+         animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Sample pills ────────────────────────────────────── */
+.sample-pills{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.pill{padding:7px 14px;border-radius:20px;font-size:.78rem;font-weight:600;
+      background:var(--surface2);border:1px solid var(--border);cursor:pointer;transition:.15s}
+.pill:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px)}
+
+/* ── Research tab specific ──────────────────────────── */
+.research-stat{background:var(--surface2);border-radius:12px;padding:18px;
+               border:1px solid var(--border);border-left:4px solid var(--accent)}
+.research-stat h3{color:var(--accent);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.research-stat p{font-size:.85rem;color:var(--text);line-height:1.7}
+.research-stat .num{font-size:1.4rem;font-weight:800;color:var(--accent)}
+
+.gap-num{display:inline-flex;align-items:center;justify-content:center;
+         width:26px;height:26px;border-radius:50%;background:var(--accent);
+         color:#06121a;font-weight:800;font-size:.78rem;flex-shrink:0}
+
+footer{text-align:center;color:var(--muted);font-size:.78rem;padding:30px 0 10px}
+
+/* ── Refined interface layer ───────────────────────── */
+:root{
+  --bg:#090b10;
+  --surface:rgba(22,25,33,.82);
+  --surface2:rgba(30,34,44,.78);
+  --surface3:#252a35;
+  --border:rgba(255,255,255,.095);
+  --border-soft:rgba(255,255,255,.06);
+  --text:#f5f7fb;
+  --muted:#9299a8;
+  --accent:#69c7f6;
+  --accent2:#927cff;
+  --radius:16px;
+}
+html{scroll-behavior:smooth}
+body{
+  background:
+    radial-gradient(900px 480px at 4% -8%,rgba(105,199,246,.12),transparent 68%),
+    radial-gradient(760px 460px at 100% 0%,rgba(146,124,255,.11),transparent 70%),
+    linear-gradient(180deg,#0b0d12 0%,#090b10 48%,#0b0d12 100%);
+  letter-spacing:.005em;
+}
+body:before{
+  content:"";position:fixed;inset:0;pointer-events:none;opacity:.025;
+  background-image:radial-gradient(rgba(255,255,255,.8) .5px,transparent .5px);
+  background-size:4px 4px;mix-blend-mode:soft-light;z-index:-1;
+}
+header{
+  background:rgba(12,14,20,.76);border-bottom:1px solid var(--border-soft);
+  padding:14px clamp(18px,4vw,48px);gap:13px;
+  box-shadow:0 10px 40px rgba(0,0,0,.14);
+}
+.logo-badge{
+  width:40px;height:40px;border-radius:13px;font-size:1.15rem;
+  background:linear-gradient(145deg,#79d7fb,#7561ed);
+  box-shadow:0 6px 22px rgba(105,199,246,.22),inset 0 1px rgba(255,255,255,.45);
+}
+h1{font-size:1.18rem;letter-spacing:-.02em}
+.subtitle{font-size:.76rem;color:#858c9b}
+.header-badges{gap:7px}
+.hbadge{
+  padding:5px 10px;background:rgba(255,255,255,.045);
+  border-color:var(--border-soft);backdrop-filter:blur(12px)
+}
+.container{max-width:1280px;padding:34px clamp(16px,3vw,34px) 64px}
+.tabs{
+  gap:3px;margin-bottom:30px;padding:4px;border-radius:15px;
+  background:rgba(255,255,255,.045);border-color:var(--border-soft);
+  box-shadow:0 12px 30px rgba(0,0,0,.13);width:auto;max-width:max-content
+}
+.tab{
+  padding:9px 15px;border-radius:11px;font-size:.8rem;
+  transition:background .2s,color .2s,transform .2s
+}
+.tab:hover{background:rgba(255,255,255,.055);color:var(--text);transform:translateY(-1px)}
+.tab.active{
+  background:rgba(255,255,255,.92);color:#11151d;
+  box-shadow:0 3px 12px rgba(0,0,0,.2)
+}
+.card{
+  background:linear-gradient(145deg,rgba(25,29,39,.88),rgba(17,20,27,.88));
+  border-color:var(--border-soft);border-radius:18px;padding:24px;
+  box-shadow:0 18px 50px rgba(0,0,0,.18),inset 0 1px rgba(255,255,255,.035);
+}
+h2{font-size:1rem;letter-spacing:-.01em;margin-bottom:9px}
+.card-sub{font-size:.8rem;line-height:1.7;margin-bottom:20px}
+.form-group{
+  background:rgba(255,255,255,.042);border-color:transparent;
+  border-radius:13px;padding:15px;box-shadow:inset 0 1px rgba(255,255,255,.025)
+}
+.form-group:hover{background:rgba(255,255,255,.052)}
+label{font-size:.78rem}
+input[type=number],select{
+  background:rgba(5,7,11,.38);border-color:var(--border);
+  border-radius:9px;padding:9px 10px;transition:border-color .2s,box-shadow .2s
+}
+input[type=number]:focus,select:focus{
+  border-color:var(--accent);box-shadow:0 0 0 3px rgba(105,199,246,.12)
+}
+input[type=range]{accent-color:var(--accent);height:4px}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:4px;background:#3a404d}
+input[type=range]::-webkit-slider-thumb{margin-top:-5px;width:14px;height:14px}
+.slider-val{font-size:.84rem;color:#a9dfff}
+.btn{
+  min-height:42px;padding:10px 17px;border-radius:11px;font-size:.82rem;
+  box-shadow:0 5px 16px rgba(0,0,0,.14);transition:transform .2s,box-shadow .2s,filter .2s
+}
+.btn:hover{transform:translateY(-1px);filter:brightness(1.05)}
+.btn-primary{
+  background:linear-gradient(135deg,#72d0f8,#5d9dea);color:#08121c;
+  box-shadow:0 8px 22px rgba(93,157,234,.2)
+}
+.btn-outline{background:rgba(255,255,255,.045);border-color:var(--border);color:#dce2ec}
+.btn-green{background:linear-gradient(135deg,#6be09b,#35b878)}
+.pill{
+  padding:7px 12px;border-radius:10px;background:rgba(255,255,255,.045);
+  border-color:var(--border-soft);font-size:.75rem;transition:all .2s
+}
+.pill:hover{background:rgba(105,199,246,.1);box-shadow:0 5px 15px rgba(0,0,0,.13)}
+.result-hero{padding:18px 0 14px}
+.prob-ring{width:174px;height:174px}
+.prob-ring svg{width:174px;height:174px}
+.prob-ring-text{gap:2px}
+.prob-num{font-size:2.25rem;letter-spacing:-.05em}
+.prob-lbl{text-transform:uppercase;letter-spacing:.08em;font-size:.61rem}
+.metric-row{gap:10px;margin:20px 0 8px}
+.metric-box,.stat-box{
+  background:rgba(255,255,255,.042);border-color:var(--border-soft);
+  border-radius:13px;padding:15px 12px;box-shadow:inset 0 1px rgba(255,255,255,.025)
+}
+.metric-val{font-size:1rem}
+.metric-lbl,.stat-lbl{font-size:.68rem;letter-spacing:.02em}
+.gauge-track{height:9px;background:#292e39;box-shadow:none}
+.gauge-fill{box-shadow:0 0 14px currentColor}
+.sensor-row{
+  padding:9px 0;margin:0;border-bottom:1px solid var(--border-soft)
+}
+.sensor-row:last-child{border-bottom:0}
+.sensor-name{width:185px;font-size:.78rem}
+.sensor-track{height:6px;background:#2a303b}
+.sensor-fill{box-shadow:0 0 10px currentColor}
+.sensor-val{font-size:.78rem;color:#d8deea}
+.sensor-status{font-size:.68rem}
+.mode-chip{
+  background:rgba(105,199,246,.08);border-color:rgba(105,199,246,.18);
+  border-radius:10px;padding:8px 11px;font-size:.76rem
+}
+.mode-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.mode-card{padding:12px 13px;background:rgba(255,255,255,.035);
+           border:1px solid var(--border-soft);border-radius:12px}
+.mode-card-head{display:flex;justify-content:space-between;gap:12px;
+                font-size:.76rem;font-weight:700;margin-bottom:8px}
+.mode-card-head span:last-child{color:var(--accent)}
+.mode-track{height:5px;border-radius:5px;background:#292f3a;overflow:hidden}
+.mode-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,#6bcaf6,#8c79ff)}
+.action-item{
+  background:rgba(255,255,255,.042);border-left-width:2px;border-radius:10px;
+  padding:12px 14px;margin-bottom:7px;font-size:.8rem
+}
+.action-item.action-immediate{border-left-color:var(--red);background:rgba(248,113,113,.07)}
+.action-item.action-high{border-left-color:var(--orange)}
+.action-item.action-monitor{border-left-color:var(--yellow)}
+.action-item.action-routine{border-left-color:var(--green)}
+.action-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:4px}
+.action-title{font-weight:750;color:var(--text)}
+.action-priority{font-size:.65rem;text-transform:uppercase;letter-spacing:.08em;font-weight:800}
+.action-detail{color:#d5dbe6;margin-bottom:5px}
+.action-reason,.action-next,.action-source{font-size:.72rem;color:var(--muted);line-height:1.5}
+.action-next{color:#b7dff3}
+.stat-grid{gap:10px}
+.stat-num{font-size:1.55rem;letter-spacing:-.04em}
+.table-wrap{border-color:var(--border-soft);border-radius:13px}
+th{background:#20252f;padding:12px 13px;font-size:.7rem;letter-spacing:.03em;text-transform:uppercase}
+td{padding:11px 13px;font-size:.77rem}
+tr:hover td{background:rgba(255,255,255,.035)}
+.upload-zone{
+  border:1px dashed #4c5566;border-radius:14px;padding:42px 24px;
+  background:rgba(255,255,255,.028);transition:all .22s
+}
+.upload-zone:hover,.upload-zone.dragging{
+  border-color:var(--accent);background:rgba(105,199,246,.07);
+  box-shadow:inset 0 0 30px rgba(105,199,246,.035)
+}
+.research-stat{
+  background:rgba(255,255,255,.038);border-color:var(--border-soft);
+  border-left:2px solid var(--accent);border-radius:14px;padding:20px
+}
+.research-stat h3{font-size:.86rem}
+.research-stat p{font-size:.8rem;color:#d3d9e4}
+.gap-num{width:24px;height:24px;font-size:.7rem;background:rgba(105,199,246,.9)}
+#toast{
+  background:rgba(31,36,47,.94);border-color:var(--border);
+  border-radius:12px;backdrop-filter:blur(16px);box-shadow:0 16px 38px rgba(0,0,0,.3)
+}
+@media(max-width:800px){
+  header{align-items:flex-start;flex-wrap:wrap}
+  .header-badges{width:100%;margin-left:53px}
+  .tabs{max-width:none;overflow-x:auto}
+  .tab{white-space:nowrap}
+  .metric-row{grid-template-columns:repeat(2,1fr)}
+  .sensor-name{width:145px}
+}
+@media(max-width:520px){
+  h1{font-size:1rem}
+  .subtitle{font-size:.7rem}
+  .header-badges{margin-left:0}
+  .card{padding:18px}
+  .metric-row,.stat-grid{grid-template-columns:1fr 1fr}
+  .sensor-row{display:grid;grid-template-columns:1fr auto;gap:6px 10px}
+  .sensor-name{width:auto}
+  .sensor-track{grid-column:1/-1;grid-row:2}
+  .sensor-val{width:auto}
+  .sensor-status{width:auto;text-align:right}
+  .btn{width:100%;justify-content:center}
+  .mode-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ─── Header ──────────────────────────────────────────────────────────── -->
+<header>
+  <div class="logo-badge">⚙️</div>
+  <div>
+    <h1>AI4I Predictive Maintenance — Test Lab</h1>
+    <div class="subtitle">XGBoost · SHAP · CMHS · UCI AI4I 2020 · 10,000 machines · 3.39% failure rate</div>
+  </div>
+  <div class="header-badges">
+    <span class="hbadge">🎯 5 Research Gaps</span>
+    <span class="hbadge">🧪 Local Inference</span>
+  </div>
+</header>
+
+<div class="container">
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('single')">🔍 Single Machine</div>
+    <div class="tab" onclick="switchTab('batch')">📋 Batch CSV</div>
+    <div class="tab" onclick="switchTab('research')">🔬 Research Findings</div>
+    <div class="tab" onclick="switchTab('info')">⚙️ Model Info</div>
+  </div>
+
+  <!-- ═══ TAB 1: Single Machine ═══ -->
+  <div id="tab-single" class="tab-panel active">
+
+    <div class="card">
+      <h2>🎛️ Machine Sensor Readings</h2>
+      <p class="card-sub">Adjust sliders or enter exact values. Safe operating ranges shown per sensor.</p>
+
+      <div class="form-group" style="margin-bottom:16px">
+        <label>Product Type</label>
+        <select id="f_Type">
+          <option value="L">L — Low quality (3.9% base failure rate)</option>
+          <option value="M" selected>M — Medium quality (2.8% base failure rate)</option>
+          <option value="H">H — High quality (2.1% base failure rate)</option>
+        </select>
+      </div>
+
+      <div class="grid-3" id="sensor-form"></div>
+
+      <div style="margin-top:18px">
+        <div class="hint" style="margin-bottom:6px">⚡ Quick samples — load a known scenario:</div>
+        <div class="sample-pills">
+          <span class="pill" onclick="loadSample('healthy')">✅ Healthy</span>
+          <span class="pill" onclick="loadSample('tool_wear')">🔧 Tool Wear (TWF)</span>
+          <span class="pill" onclick="loadSample('heat')">🔥 Heat Dissipation (HDF)</span>
+          <span class="pill" onclick="loadSample('overstrain')">⚠️ Overstrain (OSF)</span>
+          <span class="pill" onclick="loadSample('power')">⚡ Power Failure (PWF)</span>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="predict()">
+          <span>🔮 Predict Failure Risk</span>
+          <div class="spinner" id="spin-single"></div>
+        </button>
+        <button class="btn btn-outline" onclick="resetForm()">↺ Reset</button>
+      </div>
+    </div>
+
+    <div id="single-result">
+
+      <div class="card">
+        <div class="result-hero">
+          <div class="prob-ring">
+            <svg width="160" height="160">
+              <circle cx="80" cy="80" r="70" stroke="var(--surface3)" stroke-width="12" fill="none"/>
+              <circle id="ring-progress" cx="80" cy="80" r="70" stroke="var(--accent)"
+                      stroke-width="12" fill="none" stroke-linecap="round"
+                      stroke-dasharray="440" stroke-dashoffset="440"
+                      style="transition:stroke-dashoffset 1s cubic-bezier(.4,0,.2,1), stroke .3s"/>
+            </svg>
+            <div class="prob-ring-text">
+              <div class="prob-num" id="hero-prob">—</div>
+              <div class="prob-lbl">Failure Probability</div>
+            </div>
+          </div>
+          <div id="hero-badge"></div>
+          <div style="margin-top:10px;color:var(--muted);font-size:.88rem;font-weight:600" id="hero-verdict"></div>
+        </div>
+
+        <div class="gauge-wrap">
+          <div class="gauge-track"><div class="gauge-fill" id="gauge-bar" style="width:0%"></div></div>
+          <div class="gauge-labels">
+            <span>0%</span><span>30% Medium</span><span>50% High</span><span>70% Critical</span><span>100%</span>
+          </div>
+        </div>
+
+        <div class="metric-row">
+          <div class="metric-box">
+            <div class="metric-val" id="m-pred-opt">—</div>
+            <div class="metric-lbl">Cost-Optimal Thr (0.010)</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-val" id="m-pred-def">—</div>
+            <div class="metric-lbl">Default Thr (0.50)</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-val" id="m-cmhs">—</div>
+            <div class="metric-lbl">CMHS Score</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-val" id="m-tier">—</div>
+            <div class="metric-lbl">CMHS Tier</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📊 Sensor Health Breakdown</h2>
+        <div id="sensor-bars"></div>
+      </div>
+
+      <div class="card">
+        <h2>🧭 Model-Predicted Failure Modes (Gap 5)</h2>
+        <div id="modes-list"></div>
+      </div>
+
+      <div class="card">
+        <h2>🛠️ Recommended Actions</h2>
+        <p class="card-sub">Ranked guidance from failure-mode model scores and sensor evidence. Confirm critical actions with an operator.</p>
+        <div id="actions-list"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ TAB 2: Batch CSV ═══ -->
+  <div id="tab-batch" class="tab-panel">
+    <div class="card">
+      <h2>📋 Batch Prediction from CSV</h2>
+      <p class="card-sub">
+        Upload a CSV with columns: <code>Type, Air_temperature_K, Process_temperature_K,
+        Rotational_speed_rpm, Torque_Nm, Tool_wear_min</code>. Extra columns (UDI, Machine failure, etc.)
+        are preserved in the output.
+      </p>
+
+      <div class="upload-zone" id="drop-zone"
+           onclick="document.getElementById('csv-input').click()"
+           ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="dropFile(event)">
+        <div style="font-size:2.2rem;margin-bottom:10px">📂</div>
+        <div style="font-weight:700;margin-bottom:6px">Drop CSV here or click to browse</div>
+        <div class="hint">Works with the original ai4i2020.csv or any CSV with the 5 sensor columns</div>
+        <input type="file" id="csv-input" accept=".csv" style="display:none" onchange="fileSelected(event)">
+      </div>
+
+      <div id="file-name" style="color:var(--accent);margin-top:12px;font-size:.85rem;font-weight:600"></div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="batch-btn" onclick="runBatch()" disabled>
+          <span>🚀 Run Batch Prediction</span>
+          <div class="spinner" id="spin-batch"></div>
+        </button>
+        <button class="btn btn-green" id="download-btn" onclick="downloadResults()" style="display:none">
+          ⬇️ Download Full Results CSV
+        </button>
+      </div>
+    </div>
+
+    <div id="batch-result" style="display:none">
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-num" id="bs-total">—</div><div class="stat-lbl">Total Machines</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--red)" id="bs-fail">—</div><div class="stat-lbl">Predicted Failures</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--orange)" id="bs-crit">—</div><div class="stat-lbl">Critical Risk</div></div>
+        <div class="stat-box"><div class="stat-num" style="color:var(--yellow)" id="bs-rate">—</div><div class="stat-lbl">Failure Rate %</div></div>
+      </div>
+
+      <div class="card">
+        <h2>📋 Preview (first 300 rows)</h2>
+        <div class="table-wrap">
+          <table id="batch-table">
+            <thead id="batch-head"></thead>
+            <tbody id="batch-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TAB 3: Research Findings ═══ -->
+  <div id="tab-research" class="tab-panel">
+    <div class="card">
+      <h2>🔬 5 Research Contributions — Live from the Actual Pipeline Run</h2>
+      <p class="card-sub">These numbers come directly from <code>research_summary.pkl</code>, generated by running the full pipeline on the UCI AI4I 2020 dataset.</p>
+
+      <div class="grid-2" id="research-grid" style="margin-top:10px">
+        <!-- populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TAB 4: Model Info ═══ -->
+  <div id="tab-info" class="tab-panel">
+    <div class="card">
+      <h2>⚙️ Model Information</h2>
+      <div id="model-info-content" style="color:var(--muted)">Loading...</div>
+    </div>
+    <div class="card">
+      <h2>📐 Safe Operating Ranges & CMHS Weights</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Sensor</th><th>Low</th><th>High</th><th>Unit</th><th>CMHS Weight</th><th>Primary Failure Link</th></tr></thead>
+          <tbody>
+            <tr><td>Tool_wear_min</td><td>0</td><td>200</td><td>min</td><td>0.30</td><td>TWF</td></tr>
+            <tr><td>Torque_Nm</td><td>3.8</td><td>76.6</td><td>Nm</td><td>0.25</td><td>OSF</td></tr>
+            <tr><td>Air_temperature_K</td><td>295.0</td><td>304.5</td><td>K</td><td>0.15</td><td>HDF</td></tr>
+            <tr><td>Process_temperature_K</td><td>305.7</td><td>313.8</td><td>K</td><td>0.15</td><td>HDF</td></tr>
+            <tr><td>Rotational_speed_rpm</td><td>1168</td><td>2886</td><td>rpm</td><td>0.15</td><td>OSF / PWF</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SENSORS = [
+  {key:'Air_temperature_K',     label:'Air Temperature',     unit:'K',    lo:295.0, hi:304.5, step:0.1, def:300.0},
+  {key:'Process_temperature_K', label:'Process Temperature', unit:'K',    lo:305.7, hi:313.8, step:0.1, def:310.0},
+  {key:'Rotational_speed_rpm',  label:'Rotational Speed',    unit:'rpm',  lo:1168,  hi:2886,  step:1,   def:1500},
+  {key:'Torque_Nm',             label:'Torque',              unit:'Nm',   lo:3.8,   hi:76.6,  step:0.1, def:40.0},
+  {key:'Tool_wear_min',         label:'Tool Wear',           unit:'min',  lo:0,     hi:253,   step:1,   def:100},
+];
+const RISK_COLORS = {Critical:'var(--red)',High:'var(--orange)',Medium:'var(--yellow)',Low:'var(--green)'};
+const RING_CIRC = 2*Math.PI*70;
+let batchFile = null;
+
+/* ── Build form ─────────────────────────────────────── */
+(function buildForm(){
+  const wrap = document.getElementById('sensor-form');
+  SENSORS.forEach(s=>{
+    wrap.innerHTML += `
+      <div class="form-group">
+        <label>${s.label} <span class="unit">${s.unit}</span></label>
+        <div class="slider-row">
+          <input type="range" id="r_${s.key}" min="${s.lo}" max="${s.hi}" step="${s.step}" value="${s.def}"
+                 oninput="syncSlider('${s.key}')">
+          <span class="slider-val" id="v_${s.key}">${s.def}</span>
+        </div>
+        <input type="number" id="f_${s.key}" value="${s.def}" step="${s.step}" style="margin-top:4px"
+               oninput="syncNumber('${s.key}')">
+        <span class="hint">Safe range: ${s.lo} – ${s.hi} ${s.unit}</span>
+      </div>`;
+  });
+})();
+
+function syncSlider(key){
+  const v = document.getElementById(`r_${key}`).value;
+  document.getElementById(`v_${key}`).textContent = v;
+  document.getElementById(`f_${key}`).value = v;
+}
+function syncNumber(key){
+  const v = document.getElementById(`f_${key}`).value;
+  document.getElementById(`r_${key}`).value = v;
+  document.getElementById(`v_${key}`).textContent = v;
+}
+
+/* ── Tabs ───────────────────────────────────────────── */
+function switchTab(name){
+  const names=['single','batch','research','info'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active', names[i]===name));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById(`tab-${name}`).classList.add('active');
+  if(name==='info') loadModelInfo();
+  if(name==='research') loadResearch();
+}
+
+/* ── Samples ────────────────────────────────────────── */
+async function loadSample(kind){
+  try{
+    const res = await fetch(`/api/sample/${kind}`);
+    const s = await res.json();
+    document.getElementById('f_Type').value = s.Type;
+    SENSORS.forEach(({key})=>{
+      document.getElementById(`f_${key}`).value = s[key];
+      document.getElementById(`r_${key}`).value = s[key];
+      document.getElementById(`v_${key}`).textContent = s[key];
+    });
+    const names = {healthy:'Healthy',tool_wear:'Tool Wear (TWF)',heat:'Heat Dissipation (HDF)',
+                   overstrain:'Overstrain (OSF)',power:'Power Failure (PWF)'};
+    toast(`Loaded: ${names[kind]} scenario`);
+  }catch(e){ toast('Could not load sample','err'); }
+}
+
+function resetForm(){
+  document.getElementById('f_Type').value='M';
+  SENSORS.forEach(s=>{
+    document.getElementById(`f_${s.key}`).value=s.def;
+    document.getElementById(`r_${s.key}`).value=s.def;
+    document.getElementById(`v_${s.key}`).textContent=s.def;
+  });
+  document.getElementById('single-result').style.display='none';
+}
+
+/* ── Predict ────────────────────────────────────────── */
+async function predict(){
+  const data = {Type: document.getElementById('f_Type').value};
+  for(const s of SENSORS){
+    const v = parseFloat(document.getElementById(`f_${s.key}`).value);
+    if(isNaN(v)){ toast(`Please enter a value for ${s.label}`,'warn'); return; }
+    data[s.key] = v;
+  }
+  toggleSpin('spin-single',true);
+  try{
+    const res  = await fetch('/api/predict',{method:'POST',
+      headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    const json = await res.json();
+    if(json.error){ toast(json.error,'err'); return; }
+    renderSingle(json, data);
+  }catch(e){ toast('Server error — is app.py running?','err'); }
+  finally{ toggleSpin('spin-single',false); }
+}
+
+function renderSingle(r, raw){
+  document.getElementById('single-result').style.display='block';
+  const prob = r.failure_probability, risk = r.risk_level;
+  const col = RISK_COLORS[risk] || 'var(--accent)';
+
+  const offset = RING_CIRC - (Math.min(prob,100)/100)*RING_CIRC;
+  const ring = document.getElementById('ring-progress');
+  ring.style.stroke = col;
+  ring.style.strokeDashoffset = offset;
+
+  document.getElementById('hero-prob').textContent = prob.toFixed(2)+'%';
+  document.getElementById('hero-prob').style.color = col;
+  document.getElementById('hero-badge').innerHTML = `<span class="badge badge-${risk}">${risk} Risk</span>`;
+  document.getElementById('hero-verdict').textContent =
+    r.prediction_optimal===1 ? '⚠️ Failure predicted — schedule inspection' : '✅ No failure predicted';
+
+  document.getElementById('gauge-bar').style.width = Math.min(prob,100)+'%';
+  document.getElementById('gauge-bar').style.background = col;
+
+  document.getElementById('m-pred-opt').textContent = r.prediction_optimal===1?'⚠ FAIL':'✓ OK';
+  document.getElementById('m-pred-opt').style.color = r.prediction_optimal===1?'var(--red)':'var(--green)';
+  document.getElementById('m-pred-def').textContent = r.prediction_default===1?'⚠ FAIL':'✓ OK';
+  document.getElementById('m-pred-def').style.color = r.prediction_default===1?'var(--red)':'var(--green)';
+  document.getElementById('m-cmhs').textContent = r.cmhs.toFixed(4);
+  document.getElementById('m-tier').innerHTML = `<span class="badge badge-${r.cmhs_tier.replace(' ','')}">${r.cmhs_tier}</span>`;
+
+  const barsWrap = document.getElementById('sensor-bars');
+  barsWrap.innerHTML='';
+  SENSORS.forEach(s=>{
+    const val=raw[s.key], mid=(s.lo+s.hi)/2, half=(s.hi-s.lo)/2;
+    const health = Math.max(0, Math.min(1, 1-Math.abs(val-mid)/half));
+    const pct = health*100;
+    const barCol = health>0.7?'var(--green)':health>0.4?'var(--yellow)':'var(--red)';
+    const status = val>s.hi?'⚠ HIGH':val<s.lo?'⚠ LOW':'✓ OK';
+    const statusCol = (val>s.hi||val<s.lo)?'var(--red)':'var(--green)';
+    barsWrap.innerHTML += `
+      <div class="sensor-row">
+        <div class="sensor-name">${s.label}</div>
+        <div class="sensor-track"><div class="sensor-fill" style="width:${pct}%;background:${barCol}"></div></div>
+        <div class="sensor-val">${val} ${s.unit}</div>
+        <div class="sensor-status" style="color:${statusCol}">${status}</div>
+      </div>`;
+  });
+
+  const modesWrap = document.getElementById('modes-list');
+  const modeNames = {TWF:'Tool Wear Failure',HDF:'Heat Dissipation Failure',
+                     PWF:'Power Failure',OSF:'Overstrain Failure',RNF:'Random Failure'};
+  const modeScores = r.failure_mode_scores || {};
+  const modeEntries = Object.entries(modeScores).sort((a,b)=>b[1]-a[1]);
+  modesWrap.innerHTML = modeEntries.length
+    ? `<div class="mode-grid">${modeEntries.map(([code,score])=>`
+        <div class="mode-card">
+          <div class="mode-card-head"><span>${code} · ${modeNames[code]||code}</span><span>${score}%</span></div>
+          <div class="mode-track"><div class="mode-fill" style="width:${Math.min(score,100)}%"></div></div>
+        </div>`).join('')}</div>
+       <div class="hint" style="margin-top:11px">Mode scores are independent model probabilities; scores at or above 50% are treated as predicted modes.</div>`
+    : '<span class="hint">No failure-mode scores were returned.</span>';
+
+  const actWrap = document.getElementById('actions-list');
+  actWrap.innerHTML='';
+  r.recommended_actions.forEach(a=>{
+    const priority = (a.priority||'Monitor').toLowerCase();
+    const icon = priority==='immediate'?'⛔':priority==='high'?'⚠️':priority==='routine'?'✓':'◌';
+    actWrap.innerHTML += `<div class="action-item action-${priority}">
+      <div class="action-head">
+        <span class="action-title">${icon} ${a.title}</span>
+        <span class="action-priority" style="color:${priority==='immediate'?'var(--red)':priority==='high'?'var(--orange)':priority==='routine'?'var(--green)':'var(--yellow)'}">${a.priority}</span>
+      </div>
+      <div class="action-detail">${a.detail}</div>
+      <div class="action-reason"><strong>Why:</strong> ${a.reason}</div>
+      <div class="action-next"><strong>Next:</strong> ${a.next_step}</div>
+      <div class="action-source">Evidence: ${a.source}</div>
+    </div>`;
+  });
+
+  document.getElementById('single-result').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* ── Batch ──────────────────────────────────────────── */
+function fileSelected(e){
+  batchFile = e.target.files[0];
+  document.getElementById('file-name').textContent = '📄 '+batchFile.name;
+  document.getElementById('batch-btn').disabled = false;
+}
+function dragOver(e){ e.preventDefault(); document.getElementById('drop-zone').classList.add('dragging'); }
+function dragLeave(e){ document.getElementById('drop-zone').classList.remove('dragging'); }
+function dropFile(e){
+  e.preventDefault(); dragLeave(e);
+  batchFile = e.dataTransfer.files[0];
+  document.getElementById('file-name').textContent = '📄 '+batchFile.name;
+  document.getElementById('batch-btn').disabled = false;
+}
+async function runBatch(){
+  if(!batchFile){ toast('Please select a CSV file','warn'); return; }
+  toggleSpin('spin-batch',true);
+  const fd = new FormData(); fd.append('file', batchFile);
+  try{
+    const res  = await fetch('/api/batch',{method:'POST',body:fd});
+    const json = await res.json();
+    if(json.error){ toast(json.error,'err'); return; }
+    renderBatch(json);
+    document.getElementById('download-btn').style.display='inline-flex';
+  }catch(e){ toast('Server error','err'); }
+  finally{ toggleSpin('spin-batch',false); }
+}
+function renderBatch(r){
+  document.getElementById('batch-result').style.display='block';
+  document.getElementById('bs-total').textContent = r.total_machines;
+  document.getElementById('bs-fail').textContent  = r.predicted_failures;
+  document.getElementById('bs-crit').textContent  = r.critical_risk;
+  document.getElementById('bs-rate').textContent  = r['failure_rate_%']+'%';
+  if(!r.preview || !r.preview.length) return;
+  const cols = Object.keys(r.preview[0]);
+  const interest = ['UDI','Type','Failure_Probability_%','Prediction','Predicted_Failure_Modes',
+                    'TWF_Probability_%','HDF_Probability_%','PWF_Probability_%',
+                    'OSF_Probability_%','RNF_Probability_%','CMHS','CMHS_Tier',
+                    'Risk_Level','Tool_wear_min','Torque_Nm','Rotational_speed_rpm','Machine_failure'];
+  const showCols = interest.filter(c=>cols.includes(c));
+  document.getElementById('batch-head').innerHTML = '<tr>'+showCols.map(c=>`<th>${c}</th>`).join('')+'</tr>';
+  document.getElementById('batch-body').innerHTML = r.preview.map(row=>{
+    return '<tr>'+showCols.map(c=>{
+      const v=row[c];
+      if(c==='Prediction') return `<td style="color:${v==1?'var(--red)':'var(--green)'}">${v==1?'⚠ FAIL':'✓ OK'}</td>`;
+      if(c==='Risk_Level') return `<td><span class="badge badge-${v}">${v}</span></td>`;
+      if(c==='CMHS_Tier') return `<td><span class="badge badge-${(v||'').replace(' ','')}">${v}</span></td>`;
+      if(c==='Failure_Probability_%') return `<td><strong>${v}%</strong></td>`;
+      if(c.endsWith('_Probability_%')) return `<td>${v}%</td>`;
+      return `<td>${v!==null&&v!==undefined?v:''}</td>`;
+    }).join('')+'</tr>';
+  }).join('');
+}
+async function downloadResults(){
+  if(!batchFile){ toast('Run batch first','warn'); return; }
+  const fd = new FormData(); fd.append('file', batchFile);
+  const res = await fetch('/api/batch/download',{method:'POST',body:fd});
+  const blob = await res.blob();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'ai4i_predictions.csv'; a.click();
+}
+
+/* ── Model Info ─────────────────────────────────────── */
+async function loadModelInfo(){
+  const div = document.getElementById('model-info-content');
+  try{
+    const res = await fetch('/api/model_info');
+    const j = await res.json();
+    div.innerHTML = `
+      <div class="grid-4" style="margin-bottom:16px">
+        <div class="metric-box"><div class="metric-val" style="color:var(--accent)">${j.model_type}</div><div class="metric-lbl">Model Type</div></div>
+        <div class="metric-box"><div class="metric-val">${j.n_estimators}</div><div class="metric-lbl">Trees</div></div>
+        <div class="metric-box"><div class="metric-val">${j.max_depth}</div><div class="metric-lbl">Max Depth</div></div>
+        <div class="metric-box"><div class="metric-val" style="color:var(--green)">${j.optimal_threshold}</div><div class="metric-lbl">Optimal Threshold</div></div>
+      </div>
+      <div style="font-size:.85rem;color:var(--muted)">
+        <strong style="color:var(--text)">All ${j.n_features} model features:</strong><br>
+        <span style="color:var(--accent)">${j.features.join(', ')}</span><br><br>
+        <strong style="color:var(--text)">Failure-mode models:</strong>
+        <span style="color:var(--accent)">${j.failure_mode_models.join(', ')}</span>
+        <br><span class="hint">CMHS and recommended actions are domain diagnostics, not model predictions.</span>
+      </div>`;
+  }catch(e){ div.textContent='Could not load model info.'; }
+}
+
+/* ── Research tab ───────────────────────────────────── */
+async function loadResearch(){
+  const grid = document.getElementById('research-grid');
+  if(grid.dataset.loaded) return;
+  try{
+    const res = await fetch('/api/model_info');
+    const j = await res.json();
+    const r = j.research || {};
+    grid.innerHTML = `
+      <div class="research-stat">
+        <h3><span class="gap-num">1</span> Honest vs Leaky Evaluation</h3>
+        <p>Random 80-20 split reports AUC=<strong>${(r.gap1_leaky_auc??0).toFixed(4)}</strong>.
+        Honest Type-LOGO evaluation drops to AUC=<strong>${(r.gap1_honest_auc??0).toFixed(4)}</strong>.
+        <br><span class="num">+${(r.gap1_inflation_f1??0).toFixed(4)}</span> F1 inflation from leaky evaluation.</p>
+      </div>
+      <div class="research-stat">
+        <h3><span class="gap-num">2</span> Composite Machine Health Score</h3>
+        <p>Failures mean CMHS=<strong>${(r.gap2_cmhs_fail_mean??0).toFixed(4)}</strong> vs
+        Healthy mean=<strong>${(r.gap2_cmhs_ok_mean??0).toFixed(4)}</strong>.
+        Critical tier shows <span class="num">23.95%</span> failure rate vs 0% for Healthy tier.</p>
+      </div>
+      <div class="research-stat">
+        <h3><span class="gap-num">3</span> Actionable XAI (SHAP)</h3>
+        <p>Top global drivers: <strong>${(r.gap3_top3_shap||[]).join(', ')}</strong>.
+        Engineered features outrank raw sensors — <span class="num">Wear_per_Torque</span> ranks #2 globally.</p>
+      </div>
+      <div class="research-stat">
+        <h3><span class="gap-num">4</span> Cost-Aware Threshold</h3>
+        <p>Optimal threshold=<strong>${r.gap4_optimal_thr??'—'}</strong> achieves
+        <strong>${((r.gap4_optimal_recall??0)*100).toFixed(1)}%</strong> recall.
+        Saves <span class="num">$${(r.gap4_savings??0).toLocaleString()}</span> per 2,000 machines vs default threshold.</p>
+      </div>
+      <div class="research-stat" style="grid-column:1/-1">
+        <h3><span class="gap-num">5</span> Failure Mode Phenotyping</h3>
+        <p>K-Means (k=${r.gap5_n_phenotypes??4}) on failure records reveals distinct failure signatures:
+        <strong>${(r.gap5_names||[]).join(' · ')}</strong>.
+        The "Random Failure" mode (RNF) shows a specific high-RPM/low-torque signature — not actually random.</p>
+      </div>`;
+    grid.dataset.loaded='1';
+  }catch(e){ grid.innerHTML = '<p style="color:var(--muted)">Could not load research data.</p>'; }
+}
+
+/* ── Utils ──────────────────────────────────────────── */
+function toggleSpin(id,on){ document.getElementById(id).style.display = on?'inline-block':'none'; }
+function toast(msg,type='info'){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.borderColor = type==='err'?'var(--red)':type==='warn'?'var(--yellow)':'var(--border)';
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
